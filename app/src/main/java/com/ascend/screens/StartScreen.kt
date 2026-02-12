@@ -1,5 +1,6 @@
 package com.ascend.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -9,8 +10,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -25,17 +26,19 @@ import com.ascend.R
 
 @Composable
 fun AscendSplashScreen(navController: NavController) {
-    val backgroundBrush = Brush.radialGradient(
-        colors = listOf(Color(0xFF0D1729), Color(0xFF050B18)),
-        radius = 1500f
-    )
-
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(bgColor),
         contentAlignment = Alignment.Center
     ) {
+        Image(
+            painter = painterResource(id = R.drawable.ascend_bg),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
+
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
@@ -57,9 +60,8 @@ fun AscendSplashScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(48.dp))
 
-            // --- Title ---
             Text(
-                text = "ASCEND",
+                text = "ARISE",
                 color = Color.White,
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
@@ -69,7 +71,7 @@ fun AscendSplashScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Study, Level Up, Ascend",
+                text = "Study, Level Up, Arise",
                 color = Color.Gray,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
@@ -78,7 +80,7 @@ fun AscendSplashScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(64.dp))
             Button(
-                onClick = { navController.navigate("login") },
+                onClick = { navController.navigate("home") },
                 modifier = Modifier
                     .fillMaxWidth(0.7f)
                     .height(56.dp)
