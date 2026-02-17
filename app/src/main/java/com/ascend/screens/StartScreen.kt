@@ -80,7 +80,7 @@ fun AscendSplashScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(64.dp))
             Button(
-                onClick = { navController.navigate("home") },
+                onClick = { navController.navigate("setup_profile") },
                 modifier = Modifier
                     .fillMaxWidth(0.7f)
                     .height(56.dp)
