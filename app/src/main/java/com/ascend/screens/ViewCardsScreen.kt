@@ -1,5 +1,6 @@
 package com.ascend.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,11 +17,8 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.outlined.BookmarkBorder
-import androidx.compose.material.icons.outlined.FileCopy
 import androidx.compose.material.icons.outlined.MenuBook
-import androidx.compose.material.icons.outlined.Psychology
 import androidx.compose.material.icons.outlined.Quiz
-import androidx.compose.material.icons.outlined.RocketLaunch
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,14 +26,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.ascend.R
 import com.ascend.data.FlashcardItem
-import com.ascend.data.UserDataStore
 import com.ascend.ui.theme.bgColor
 import com.ascend.ui.theme.panel
 import com.ascend.ui.theme.primary
@@ -44,175 +43,174 @@ import com.ascend.viewModel.FlashcardViewModel
 @Composable
 fun ViewCardsScreen(navController: NavController, viewModel: FlashcardViewModel, setId: Int, title: String) {
     val cards by viewModel.getCardsForSet(setId).collectAsState(initial = emptyList())
-    val context = LocalContext.current
-    val userDataStore = remember { UserDataStore(context) }
-    val username by userDataStore.username.collectAsState(initial = "Hunter")
 
     val pagerState = rememberPagerState(pageCount = { cards.size })
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(bgColor)
-            .statusBarsPadding()
-    ) {
-        // --- Custom Top Bar ---
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                IconButton(
-                    onClick = { navController.popBackStack() },
+    Box(modifier = Modifier.fillMaxSize().background(bgColor)) {
+        // --- Background Image ---
+        Image(
+            painter = painterResource(id = R.drawable.ascend_bg),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop,
+            alpha = 0.3f
+        )
+
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+        ) {
+
+            // --- Custom Top Bar ---
+            item {
+                Row(
                     modifier = Modifier
-                        .background(Color.Black.copy(alpha = 0.3f), CircleShape)
-                        .size(40.dp)
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
-                }
-
-                Surface(
-                    color = Color(0xFFFFD700),
-                    shape = RoundedCornerShape(20.dp),
-                    modifier = Modifier.height(32.dp)
-                ) {
-
-                }
-
-                Row {
-                    IconButton(onClick = { }) {
-                        Icon(Icons.Outlined.BookmarkBorder, contentDescription = "Save", tint = Color.White)
-                    }
-                    IconButton(onClick = { }) {
-                        Icon(Icons.Default.MoreHoriz, contentDescription = "More", tint = Color.White)
-                    }
-                }
-            }
-        }
-
-        // --- Flashcard Carousel (Pager) ---
-        item {
-            if (cards.isNotEmpty()) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    HorizontalPager(
-                        state = pagerState,
+                    IconButton(
+                        onClick = { navController.popBackStack() },
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(260.dp),
-                        contentPadding = PaddingValues(horizontal = 32.dp),
-                        pageSpacing = 16.dp
-                    ) { page ->
-                        FlashcardPreviewItem(cards[page])
+                            .background(Color.Black.copy(alpha = 0.3f), CircleShape)
+                            .size(40.dp)
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    // Spacer to push icons to the right since "Ascend Pro" was removed
+                    Spacer(modifier = Modifier.weight(1f))
 
-                    Row(
-                        modifier = Modifier.height(8.dp),
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        repeat(cards.size) { iteration ->
-                            val color = if (pagerState.currentPage == iteration) Color.White else Color.Gray.copy(alpha = 0.5f)
-                            Box(
-                                modifier = Modifier
-                                    .padding(horizontal = 4.dp)
-                                    .clip(CircleShape)
-                                    .background(color)
-                                    .size(6.dp)
-                            )
+                    Row {
+                        IconButton(onClick = { }) {
+                            Icon(Icons.Outlined.BookmarkBorder, contentDescription = "Save", tint = Color.White)
+                        }
+                        IconButton(onClick = { }) {
+                            Icon(Icons.Default.MoreHoriz, contentDescription = "More", tint = Color.White)
                         }
                     }
                 }
-            } else {
-                Box(modifier = Modifier
-                    .fillMaxWidth()
-                    .height(260.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = primary)
-                }
             }
-        }
 
-        item { Spacer(modifier = Modifier.height(32.dp)) }
+            // --- Flashcard Carousel (Pager) ---
+            item {
+                if (cards.isNotEmpty()) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        HorizontalPager(
+                            state = pagerState,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(260.dp),
+                            contentPadding = PaddingValues(horizontal = 32.dp),
+                            pageSpacing = 16.dp
+                        ) { page ->
+                            FlashcardPreviewItem(cards[page])
+                        }
 
-        // --- Set Info & User Profile ---
-        item {
-            Column(modifier = Modifier.padding(horizontal = 24.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = title,
-                        color = Color.White,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    IconButton(onClick = { }) {
-                        Icon(Icons.Default.Download, contentDescription = "Download", tint = Color.White)
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Row(
+                            modifier = Modifier.height(8.dp),
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            repeat(cards.size) { iteration ->
+                                val color = if (pagerState.currentPage == iteration) Color.White else Color.Gray.copy(alpha = 0.5f)
+                                Box(
+                                    modifier = Modifier
+                                        .padding(horizontal = 4.dp)
+                                        .clip(CircleShape)
+                                        .background(color)
+                                        .size(6.dp)
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    Box(modifier = Modifier
+                        .fillMaxWidth()
+                        .height(260.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = primary)
                     }
                 }
+            }
 
-                Spacer(modifier = Modifier.height(16.dp))
+            item { Spacer(modifier = Modifier.height(32.dp)) }
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(CircleShape)
-                            .background(Color.Gray),
-                        contentAlignment = Alignment.Center
+            // --- Set Info Section (Simplified) ---
+            item {
+                Column(modifier = Modifier.padding(horizontal = 24.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(username?.take(1)?.uppercase() ?: "H", color = Color.White, fontSize = 14.sp)
+                        Text(
+                            text = title,
+                            color = Color.White,
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        IconButton(onClick = { }) {
+                            Icon(Icons.Default.Download, contentDescription = "Download", tint = Color.White)
+                        }
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = username ?: "Hunter", color = Color.White, fontSize = 14.sp)
-
-                    Spacer(modifier = Modifier.width(12.dp))
-                    VerticalDivider(modifier = Modifier.height(14.dp), color = Color.Gray.copy(alpha = 0.5f))
-                    Spacer(modifier = Modifier.width(12.dp))
-
-                    Text(text = "${cards.size} terms", color = Color.White, fontSize = 14.sp)
+                    
+                    // Display term count only, since profile info was removed
+                    Text(
+                        text = "${cards.size} terms",
+                        color = Color.Gray,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
+                    )
                 }
             }
-        }
 
-        item { Spacer(modifier = Modifier.height(24.dp)) }
+            item { Spacer(modifier = Modifier.height(24.dp)) }
 
-        // --- Action List ---
-        item {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                ActionMenuItem(icon = Icons.Outlined.MenuBook, label = "Flashcards", color = Color(0xFF4285F4))
-                ActionMenuItem(icon = Icons.Outlined.Quiz, label = "Test", color = Color(0xFF3F51B5))
+            // --- Action List ---
+            item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    ActionMenuItem(
+                        icon = Icons.Outlined.MenuBook, 
+                        label = "Flashcards", 
+                        color = Color(0xFF4285F4),
+                        onClick = { navController.navigate("flashcard_game/$setId") }
+                    )
+                    ActionMenuItem(
+                        icon = Icons.Outlined.Quiz, 
+                        label = "Test", 
+                        color = Color(0xFF3F51B5),
+                        onClick = { /* Navigate to test */ }
+                    )
+                }
             }
-        }
 
-        item {
-            Spacer(modifier = Modifier.height(32.dp))
-            Text(
-                text = "Cards in this set",
-                color = Color.White,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(horizontal = 24.dp)
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-        }
+            item {
+                Spacer(modifier = Modifier.height(32.dp))
+                Text(
+                    text = "Cards in this set",
+                    color = Color.White,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 24.dp)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+            }
 
-        // --- List of Terms & Definitions ---
-        items(cards) { card ->
-            TermDefinitionItem(card)
-        }
+            // --- List of Terms & Definitions ---
+            items(cards) { card ->
+                TermDefinitionItem(card)
+            }
 
-        item { Spacer(modifier = Modifier.height(32.dp)) }
+            item { Spacer(modifier = Modifier.height(32.dp)) }
+        }
     }
 }
 
@@ -222,9 +220,8 @@ fun TermDefinitionItem(card: FlashcardItem) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 6.dp),
-
         shape = RoundedCornerShape(12.dp),
-        color = panel
+        color = panel.copy(alpha = 0.8f)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
@@ -252,7 +249,7 @@ fun FlashcardPreviewItem(card: FlashcardItem) {
             .fillMaxSize()
             .clickable { flipped = !flipped },
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = panel)
+        colors = CardDefaults.cardColors(containerColor = panel.copy(alpha = 0.9f))
     ) {
         Box(modifier = Modifier
             .fillMaxSize()
@@ -280,15 +277,15 @@ fun FlashcardPreviewItem(card: FlashcardItem) {
 }
 
 @Composable
-fun ActionMenuItem(icon: ImageVector, label: String, color: Color) {
+fun ActionMenuItem(icon: ImageVector, label: String, color: Color, onClick: () -> Unit) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .height(64.dp)
-            .border(1.dp, Color(0xFF2E2A5B), RoundedCornerShape(24.dp))
-            .clickable { },
+            .border(1.dp, Color(0xFF2E2A5B), RoundedCornerShape(12.dp))
+            .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
-        color = panel
+        color = panel.copy(alpha = 0.8f)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 16.dp),

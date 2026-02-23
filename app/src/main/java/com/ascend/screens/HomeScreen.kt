@@ -1,6 +1,7 @@
 package com.ascend.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -8,6 +9,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.CollectionsBookmark
+import androidx.compose.material.icons.filled.FormatQuote
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,8 +20,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -44,7 +51,12 @@ fun Home(navController: NavController, viewModel: FlashcardViewModel) {
     val context = LocalContext.current
     val userDataStore = remember { UserDataStore(context) }
     val username by userDataStore.username.collectAsState(initial = "Hunter")
-    val rank by userDataStore.rank.collectAsState(initial = "E-RANK")
+    val currentExp by userDataStore.exp.collectAsState(initial = 0)
+    
+    // Get rank info dynamically based on EXP
+    val rankInfo = userDataStore.getNextRank(currentExp)
+    val rank = rankInfo.first
+    val nextRankExp = rankInfo.second
 
     val flashcardSets by viewModel.allSets.collectAsState(initial = emptyList())
 
@@ -61,15 +73,25 @@ fun Home(navController: NavController, viewModel: FlashcardViewModel) {
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
+            Image(
+                painter = painterResource(id = R.drawable.ascend_bg),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+                alpha = 0.5f
+            )
             // Screen Switcher
             when (selectedIndex) {
                 0 -> MainDashboard(
                     sets = flashcardSets,
                     username = username ?: "Hunter",
-                    rank = rank ?: "E-RANK",
+                    rank = rank,
+                    exp = currentExp,
+                    nextRankExp = nextRankExp,
                     onCardClick = { set ->
                         navController.navigate("view_cards/${set.id}/${set.title}")
-                    }
+                    },
+                    onViewAllClick = { selectedIndex = 2 }
                 )
                 2 -> FlashcardListScreen(
                     sets = flashcardSets,
@@ -77,6 +99,7 @@ fun Home(navController: NavController, viewModel: FlashcardViewModel) {
                         navController.navigate("view_cards/${set.id}/${set.title}")
                     }
                 )
+                3 -> ProfileScreen(navController = navController)
                 else -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text("Screen $selectedIndex", color = Color.White.copy(alpha = 0.3f))
@@ -162,7 +185,15 @@ fun Home(navController: NavController, viewModel: FlashcardViewModel) {
 }
 
 @Composable
-fun MainDashboard(sets: List<FlashcardSet>, username: String, rank: String, onCardClick: (FlashcardSet) -> Unit) {
+fun MainDashboard(
+    sets: List<FlashcardSet>, 
+    username: String, 
+    rank: String, 
+    exp: Int, 
+    nextRankExp: Int, 
+    onCardClick: (FlashcardSet) -> Unit,
+    onViewAllClick: () -> Unit
+) {
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp)
@@ -170,7 +201,15 @@ fun MainDashboard(sets: List<FlashcardSet>, username: String, rank: String, onCa
         item { Spacer(modifier = Modifier.height(32.dp)) }
 
         item {
-            UserProfileSection(username = username, exp = 0, rank = rank)
+            UserProfileSection(username = username, exp = exp, nextRankExp = nextRankExp, rank = rank)
+        }
+
+        item {
+            QuoteWidget()
+        }
+
+        item {
+            YourSetsWidget(count = sets.size, onClick = onViewAllClick)
         }
 
         item {
@@ -186,7 +225,90 @@ fun MainDashboard(sets: List<FlashcardSet>, username: String, rank: String, onCa
 }
 
 @Composable
-fun UserProfileSection(username: String, exp: Int, rank: String) {
+fun QuoteWidget() {
+    val quotes = listOf(
+        "It doesn't matter how slow you go as long as you do not stop.",
+        "Your only limit is your soul.",
+        "The System uses the Hunter, and the Hunter uses the System.",
+        "Leveling up is the only way to survive.",
+        "If you don't want to regret your choices later, then don't make them in the first place."
+    )
+    val randomQuote = remember { quotes.random() }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = panel.copy(alpha = 0.7f)),
+        border = BorderStroke(1.dp, primary.copy(alpha = 0.3f))
+    ) {
+        Row(
+            modifier = Modifier.padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.FormatQuote,
+                contentDescription = null,
+                tint = primary,
+                modifier = Modifier.size(32.dp).align(Alignment.Top)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column {
+                Text(
+                    text = randomQuote,
+                    color = Color.White,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    fontStyle = FontStyle.Italic,
+                    lineHeight = 20.sp
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "— SYSTEM MESSAGE",
+                    color = primary,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 2.sp
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun YourSetsWidget(count: Int, onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = panel),
+        border = BorderStroke(1.dp, Color(0xFF2E2A5B))
+    ) {
+        Row(
+            modifier = Modifier.padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(primary.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.CollectionsBookmark, contentDescription = null, tint = primary)
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = "YOUR SETS", color = primary, fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                Text(text = "$count Collections", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
+            }
+            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.Gray)
+        }
+    }
+}
+
+@Composable
+fun UserProfileSection(username: String, exp: Int, nextRankExp: Int, rank: String) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -196,7 +318,6 @@ fun UserProfileSection(username: String, exp: Int, rank: String) {
             .padding(20.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            // Profile Image Placeholder
             Box(
                 modifier = Modifier
                     .size(60.dp)
@@ -220,7 +341,7 @@ fun UserProfileSection(username: String, exp: Int, rank: String) {
                 Column {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text(text = "EXP", color = Color.Gray, fontSize = 10.sp)
-                        Text(text = "$exp / 1000", color = Color.Gray, fontSize = 10.sp)
+                        Text(text = "$exp / $nextRankExp", color = Color.Gray, fontSize = 10.sp)
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Box(
@@ -230,9 +351,11 @@ fun UserProfileSection(username: String, exp: Int, rank: String) {
                             .clip(CircleShape)
                             .background(Color.Black.copy(alpha = 0.3f))
                     ) {
+                        // Calculate progress relative to current rank tier
+                        val progress = if (nextRankExp > 0) exp.toFloat() / nextRankExp else 1f
                         Box(
                             modifier = Modifier
-                                .fillMaxWidth(exp / 1000f)
+                                .fillMaxWidth(progress.coerceIn(0f, 1f))
                                 .fillMaxHeight()
                                 .background(primary)
                         )
