@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.outlined.BookmarkBorder
@@ -43,7 +44,6 @@ import com.ascend.viewModel.FlashcardViewModel
 @Composable
 fun ViewCardsScreen(navController: NavController, viewModel: FlashcardViewModel, setId: Int, title: String) {
     val cards by viewModel.getCardsForSet(setId).collectAsState(initial = emptyList())
-
     val pagerState = rememberPagerState(pageCount = { cards.size })
 
     Box(modifier = Modifier.fillMaxSize().background(bgColor)) {
@@ -80,29 +80,27 @@ fun ViewCardsScreen(navController: NavController, viewModel: FlashcardViewModel,
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
 
-                    // Spacer to push icons to the right since "Ascend Pro" was removed
                     Spacer(modifier = Modifier.weight(1f))
 
                     Row {
                         IconButton(onClick = { }) {
                             Icon(Icons.Outlined.BookmarkBorder, contentDescription = "Save", tint = Color.White)
                         }
-                        IconButton(onClick = { }) {
-                            Icon(Icons.Default.MoreHoriz, contentDescription = "More", tint = Color.White)
+                        // This button now navigates to the dedicated Edit Set screen
+                        IconButton(onClick = { navController.navigate("edit_set/$setId/$title") }) {
+                            Icon(Icons.Default.Edit, contentDescription = "Edit set", tint = Color.White)
                         }
                     }
                 }
             }
 
-            // --- Flashcard Carousel (Pager) ---
+            // --- Flashcard Carousel ---
             item {
                 if (cards.isNotEmpty()) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         HorizontalPager(
                             state = pagerState,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(260.dp),
+                            modifier = Modifier.fillMaxWidth().height(260.dp),
                             contentPadding = PaddingValues(horizontal = 32.dp),
                             pageSpacing = 16.dp
                         ) { page ->
@@ -111,26 +109,15 @@ fun ViewCardsScreen(navController: NavController, viewModel: FlashcardViewModel,
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        Row(
-                            modifier = Modifier.height(8.dp),
-                            horizontalArrangement = Arrangement.Center
-                        ) {
+                        Row(modifier = Modifier.height(8.dp), horizontalArrangement = Arrangement.Center) {
                             repeat(cards.size) { iteration ->
                                 val color = if (pagerState.currentPage == iteration) Color.White else Color.Gray.copy(alpha = 0.5f)
-                                Box(
-                                    modifier = Modifier
-                                        .padding(horizontal = 4.dp)
-                                        .clip(CircleShape)
-                                        .background(color)
-                                        .size(6.dp)
-                                )
+                                Box(modifier = Modifier.padding(horizontal = 4.dp).clip(CircleShape).background(color).size(6.dp))
                             }
                         }
                     }
                 } else {
-                    Box(modifier = Modifier
-                        .fillMaxWidth()
-                        .height(260.dp), contentAlignment = Alignment.Center) {
+                    Box(modifier = Modifier.fillMaxWidth().height(260.dp), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(color = primary)
                     }
                 }
@@ -138,7 +125,7 @@ fun ViewCardsScreen(navController: NavController, viewModel: FlashcardViewModel,
 
             item { Spacer(modifier = Modifier.height(32.dp)) }
 
-            // --- Set Info Section (Simplified) ---
+            // --- Set Info Section ---
             item {
                 Column(modifier = Modifier.padding(horizontal = 24.dp)) {
                     Row(
@@ -146,35 +133,21 @@ fun ViewCardsScreen(navController: NavController, viewModel: FlashcardViewModel,
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = title,
-                            color = Color.White,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Text(text = title, color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
                         IconButton(onClick = { }) {
                             Icon(Icons.Default.Download, contentDescription = "Download", tint = Color.White)
                         }
                     }
-                    
-                    // Display term count only, since profile info was removed
-                    Text(
-                        text = "${cards.size} terms",
-                        color = Color.Gray,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium
-                    )
+                    Text(text = "${cards.size} terms", color = Color.Gray, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                 }
             }
 
             item { Spacer(modifier = Modifier.height(24.dp)) }
 
-            // --- Action List ---
+            // --- Action Menu ---
             item {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     ActionMenuItem(
@@ -187,26 +160,20 @@ fun ViewCardsScreen(navController: NavController, viewModel: FlashcardViewModel,
                         icon = Icons.Outlined.Quiz, 
                         label = "Test", 
                         color = Color(0xFF3F51B5),
-                        onClick = { /* Navigate to test */ }
+                        onClick = { /* Future feature */ }
                     )
                 }
             }
 
             item {
                 Spacer(modifier = Modifier.height(32.dp))
-                Text(
-                    text = "Cards in this set",
-                    color = Color.White,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 24.dp)
-                )
+                Text(text = "Cards in this set", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 24.dp))
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
-            // --- List of Terms & Definitions ---
+            // --- Scrollable Review List ---
             items(cards) { card ->
-                TermDefinitionItem(card)
+                TermDefinitionReviewItem(card)
             }
 
             item { Spacer(modifier = Modifier.height(32.dp)) }
@@ -215,27 +182,16 @@ fun ViewCardsScreen(navController: NavController, viewModel: FlashcardViewModel,
 }
 
 @Composable
-fun TermDefinitionItem(card: FlashcardItem) {
+fun TermDefinitionReviewItem(card: FlashcardItem) {
     Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
         shape = RoundedCornerShape(12.dp),
         color = panel.copy(alpha = 0.8f)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = card.term,
-                color = Color.White,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
-            )
+            Text(text = card.term, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = card.definition,
-                color = Color.Gray,
-                fontSize = 14.sp
-            )
+            Text(text = card.definition, color = Color.Gray, fontSize = 14.sp)
         }
     }
 }
@@ -243,18 +199,12 @@ fun TermDefinitionItem(card: FlashcardItem) {
 @Composable
 fun FlashcardPreviewItem(card: FlashcardItem) {
     var flipped by remember { mutableStateOf(false) }
-
     Card(
-        modifier = Modifier
-            .fillMaxSize()
-            .clickable { flipped = !flipped },
+        modifier = Modifier.fillMaxSize().clickable { flipped = !flipped },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = panel.copy(alpha = 0.9f))
     ) {
-        Box(modifier = Modifier
-            .fillMaxSize()
-            .border(1.dp, Color(0xFF2E2A5B), RoundedCornerShape(24.dp))
-            .padding(24.dp)) {
+        Box(modifier = Modifier.fillMaxSize().border(1.dp, Color(0xFF2E2A5B), RoundedCornerShape(24.dp)).padding(24.dp)) {
             Text(
                 text = if (flipped) card.definition else card.term,
                 color = Color.White,
@@ -263,15 +213,7 @@ fun FlashcardPreviewItem(card: FlashcardItem) {
                 textAlign = TextAlign.Center,
                 modifier = Modifier.align(Alignment.Center)
             )
-
-            Icon(
-                Icons.Default.Fullscreen,
-                contentDescription = null,
-                tint = Color.Gray.copy(alpha = 0.6f),
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .size(24.dp)
-            )
+            Icon(Icons.Default.Fullscreen, contentDescription = null, tint = Color.Gray.copy(alpha = 0.6f), modifier = Modifier.align(Alignment.BottomEnd).size(24.dp))
         }
     }
 }
@@ -279,31 +221,14 @@ fun FlashcardPreviewItem(card: FlashcardItem) {
 @Composable
 fun ActionMenuItem(icon: ImageVector, label: String, color: Color, onClick: () -> Unit) {
     Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(64.dp)
-            .border(1.dp, Color(0xFF2E2A5B), RoundedCornerShape(12.dp))
-            .clickable { onClick() },
+        modifier = Modifier.fillMaxWidth().height(64.dp).border(1.dp, Color(0xFF2E2A5B), RoundedCornerShape(12.dp)).clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
         color = panel.copy(alpha = 0.8f)
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = color,
-                modifier = Modifier.size(28.dp)
-            )
+        Row(modifier = Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(imageVector = icon, contentDescription = null, tint = color, modifier = Modifier.size(28.dp))
             Spacer(modifier = Modifier.width(16.dp))
-            Text(
-                text = label,
-                color = Color.White,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium
-            )
+            Text(text = label, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
         }
     }
 }

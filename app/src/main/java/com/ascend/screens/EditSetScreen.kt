@@ -14,32 +14,37 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.ascend.data.FlashcardItem
 import com.ascend.ui.theme.bgColor
 import com.ascend.ui.theme.primary
-import com.ascend.viewModel.FlashcardItemInternal
 import com.ascend.viewModel.FlashcardViewModel
-
-data class Flashcard(var term: String = "", var definition: String = "")
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreateCardsScreen(
+fun EditSetScreen(
     navController: NavController,
     viewModel: FlashcardViewModel,
-    title: String,
-    description: String,
-    initialCount: Int
+    setId: Int,
+    title: String
 ) {
-    val flashcards = remember { 
-        mutableStateListOf<Flashcard>().apply {
-            repeat(initialCount) { add(Flashcard()) }
+    val existingCards by viewModel.getCardsForSet(setId).collectAsState(initial = emptyList())
+    val scope = rememberCoroutineScope()
+    
+    // We use a local state list to track changes before saving
+    val editableCards = remember { mutableStateListOf<FlashcardItem>() }
+    
+    // Initialize the editable list once data is loaded
+    LaunchedEffect(existingCards) {
+        if (editableCards.isEmpty() && existingCards.isNotEmpty()) {
+            editableCards.addAll(existingCards)
         }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(title, color = Color.White) },
+                title = { Text("Edit: $title", color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
@@ -47,21 +52,19 @@ fun CreateCardsScreen(
                 },
                 actions = {
                     TextButton(
-                        onClick = { 
-                            val items = flashcards
-                                .filter { it.term.isNotBlank() && it.definition.isNotBlank() }
-                                .map { FlashcardItemInternal(it.term, it.definition) }
-                                
-                            val descToSave = if (description == "none") "" else description
-                            viewModel.saveSetWithCards(title, descToSave, items) {
-                                navController.navigate("home") {
-                                    popUpTo("home") { inclusive = true }
+                        onClick = {
+                            scope.launch {
+                                // 1. Delete all old cards for this set
+                                existingCards.forEach { viewModel.deleteFlashcard(it) }
+                                // 2. Insert the new/modified ones
+                                editableCards.filter { it.term.isNotBlank() && it.definition.isNotBlank() }.forEach {
+                                    viewModel.addFlashcard(it.copy(id = 0)) // reset id to auto-generate new ones
                                 }
+                                navController.popBackStack()
                             }
-                        },
-                        enabled = flashcards.any { it.term.isNotBlank() && it.definition.isNotBlank() }
+                        }
                     ) {
-                        Text("Finish Set", color = if (flashcards.any { it.term.isNotBlank() && it.definition.isNotBlank() }) primary else Color.Gray)
+                        Text("Save", color = primary)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = bgColor)
@@ -70,7 +73,7 @@ fun CreateCardsScreen(
         containerColor = bgColor,
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { flashcards.add(Flashcard()) },
+                onClick = { editableCards.add(FlashcardItem(setId = setId, term = "", definition = "")) },
                 containerColor = primary,
                 contentColor = Color.White
             ) {
@@ -85,7 +88,7 @@ fun CreateCardsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            itemsIndexed(flashcards) { index, card ->
+            itemsIndexed(editableCards) { index, card ->
                 Card(
                     colors = CardDefaults.cardColors(containerColor = Color(0xFF171131)),
                     modifier = Modifier.fillMaxWidth()
@@ -97,41 +100,27 @@ fun CreateCardsScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text("Card ${index + 1}", color = primary, style = MaterialTheme.typography.labelLarge)
-                            IconButton(onClick = { flashcards.removeAt(index) }) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = "Delete Card",
-                                    tint = Color.Gray.copy(alpha = 0.6f)
-                                )
+                            IconButton(onClick = { editableCards.removeAt(index) }) {
+                                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.Gray.copy(alpha = 0.6f))
                             }
                         }
                         
                         OutlinedTextField(
                             value = card.term,
-                            onValueChange = { 
-                                flashcards[index] = flashcards[index].copy(term = it)
-                            },
+                            onValueChange = { editableCards[index] = editableCards[index].copy(term = it) },
                             label = { Text("Term") },
                             modifier = Modifier.fillMaxWidth(),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White
-                            )
+                            colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White)
                         )
                         
                         Spacer(modifier = Modifier.height(8.dp))
                         
                         OutlinedTextField(
                             value = card.definition,
-                            onValueChange = { 
-                                flashcards[index] = flashcards[index].copy(definition = it)
-                            },
+                            onValueChange = { editableCards[index] = editableCards[index].copy(definition = it) },
                             label = { Text("Definition") },
                             modifier = Modifier.fillMaxWidth(),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White
-                            )
+                            colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White)
                         )
                     }
                 }

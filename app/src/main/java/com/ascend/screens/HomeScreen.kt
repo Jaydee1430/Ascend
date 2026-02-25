@@ -99,7 +99,7 @@ fun Home(navController: NavController, viewModel: FlashcardViewModel) {
                         navController.navigate("view_cards/${set.id}/${set.title}")
                     }
                 )
-                3 -> ProfileScreen(navController = navController)
+                3 -> ProfileScreen(navController = navController, viewModel = viewModel)
                 else -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text("Screen $selectedIndex", color = Color.White.copy(alpha = 0.3f))

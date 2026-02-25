@@ -37,8 +37,6 @@ class MainActivity : ComponentActivity() {
                 if (setupComplete != null) {
                     val navController = rememberNavController()
                     
-                    // On first run (setup not complete), show StartScreen
-                    // Otherwise, go directly to Home
                     val startDestination = if (setupComplete == true) "home" else "startscreen"
 
                     NavHost(navController = navController, startDestination = startDestination) {
@@ -49,7 +47,6 @@ class MainActivity : ComponentActivity() {
                         composable("setup_profile") {
                             SetupProfileScreen(navController)
                         }
-
 
                         composable("home") {
                             Home(navController, viewModel)
@@ -90,9 +87,20 @@ class MainActivity : ComponentActivity() {
                             val setId = backStackEntry.arguments?.getInt("setId") ?: 0
                             FlashcardGameScreen(navController, viewModel, setId)
                         }
+
+                        composable(
+                            "edit_set/{setId}/{title}",
+                            arguments = listOf(
+                                navArgument("setId") { type = NavType.IntType },
+                                navArgument("title") { type = NavType.StringType }
+                            )
+                        ) { backStackEntry ->
+                            val setId = backStackEntry.arguments?.getInt("setId") ?: 0
+                            val title = backStackEntry.arguments?.getString("title") ?: ""
+                            EditSetScreen(navController, viewModel, setId, title)
+                        }
                     }
                 } else {
-                    // Loading state while checking DataStore
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(color = primary)
                     }

@@ -34,6 +34,18 @@ class FlashcardViewModel(application: Application) : AndroidViewModel(applicatio
             dao.updateFlashcard(card)
         }
     }
+
+    fun addFlashcard(card: FlashcardItem) {
+        viewModelScope.launch {
+            dao.insertFlashcard(card)
+        }
+    }
+
+    fun deleteFlashcard(card: FlashcardItem) {
+        viewModelScope.launch {
+            dao.deleteFlashcard(card)
+        }
+    }
 }
 
 data class FlashcardItemInternal(val term: String, val definition: String)

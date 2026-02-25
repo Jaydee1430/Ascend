@@ -11,6 +11,9 @@ interface FlashcardDao {
     @Insert
     suspend fun insertFlashcards(cards: List<FlashcardItem>)
 
+    @Insert
+    suspend fun insertFlashcard(card: FlashcardItem)
+
     @Transaction
     @Query("SELECT * FROM flashcard_sets ORDER BY createdAt DESC")
     fun getAllSets(): Flow<List<FlashcardSet>>
@@ -20,6 +23,9 @@ interface FlashcardDao {
 
     @Update
     suspend fun updateFlashcard(card: FlashcardItem)
+
+    @Delete
+    suspend fun deleteFlashcard(card: FlashcardItem)
 
     @Delete
     suspend fun deleteSet(set: FlashcardSet)

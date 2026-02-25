@@ -22,6 +22,8 @@ class UserDataStore(context: Context) {
         val RANK_KEY = stringPreferencesKey("rank")
         val EXP_KEY = intPreferencesKey("exp")
         val SETUP_COMPLETE_KEY = booleanPreferencesKey("setup_complete")
+        val NOTIFICATIONS_ENABLED_KEY = booleanPreferencesKey("notifications_enabled")
+        val DARK_MODE_KEY = booleanPreferencesKey("dark_mode")
 
         val RANK_REQUIREMENTS = listOf(
             "E-RANK" to 0,
@@ -46,6 +48,12 @@ class UserDataStore(context: Context) {
     val exp: Flow<Int>
         get() = appContext.dataStore.data.map { it[EXP_KEY] ?: 0 }
 
+    val notificationsEnabled: Flow<Boolean>
+        get() = appContext.dataStore.data.map { it[NOTIFICATIONS_ENABLED_KEY] ?: true }
+
+    val darkMode: Flow<Boolean>
+        get() = appContext.dataStore.data.map { it[DARK_MODE_KEY] ?: true }
+
     suspend fun saveUsername(name: String) {
         appContext.dataStore.edit { it[USERNAME_KEY] = name }
     }
@@ -56,6 +64,18 @@ class UserDataStore(context: Context) {
 
     suspend fun completeSetup() {
         appContext.dataStore.edit { it[SETUP_COMPLETE_KEY] = true }
+    }
+
+    suspend fun setNotificationsEnabled(enabled: Boolean) {
+        appContext.dataStore.edit { it[NOTIFICATIONS_ENABLED_KEY] = enabled }
+    }
+
+    suspend fun setDarkMode(enabled: Boolean) {
+        appContext.dataStore.edit { it[DARK_MODE_KEY] = enabled }
+    }
+
+    suspend fun clearData() {
+        appContext.dataStore.edit { it.clear() }
     }
 
     suspend fun addExp(amount: Int) {
