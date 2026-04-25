@@ -1,5 +1,10 @@
 package com.ascend.screens
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -17,7 +22,6 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.MoreHoriz
-import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Quiz
 import androidx.compose.material3.*
@@ -28,6 +32,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -40,11 +45,22 @@ import com.ascend.ui.theme.bgColor
 import com.ascend.ui.theme.panel
 import com.ascend.ui.theme.primary
 import com.ascend.viewModel.FlashcardViewModel
+import org.json.JSONArray
+import org.json.JSONObject
 
 @Composable
 fun ViewCardsScreen(navController: NavController, viewModel: FlashcardViewModel, setId: Int, title: String) {
     val cards by viewModel.getCardsForSet(setId).collectAsState(initial = emptyList())
     val pagerState = rememberPagerState(pageCount = { cards.size })
+    val context = LocalContext.current
+
+    val createDocumentLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        uri?.let { 
+            saveSetToFile(context, it, title, cards)
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize().background(bgColor)) {
         // --- Background Image ---
@@ -83,9 +99,6 @@ fun ViewCardsScreen(navController: NavController, viewModel: FlashcardViewModel,
                     Spacer(modifier = Modifier.weight(1f))
 
                     Row {
-                        IconButton(onClick = { }) {
-                            Icon(Icons.Outlined.BookmarkBorder, contentDescription = "Save", tint = Color.White)
-                        }
                         // This button now navigates to the dedicated Edit Set screen
                         IconButton(onClick = { navController.navigate("edit_set/$setId/$title") }) {
                             Icon(Icons.Default.Edit, contentDescription = "Edit set", tint = Color.White)
@@ -134,7 +147,9 @@ fun ViewCardsScreen(navController: NavController, viewModel: FlashcardViewModel,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(text = title, color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-                        IconButton(onClick = { }) {
+                        IconButton(onClick = { 
+                            createDocumentLauncher.launch("${title.replace(" ", "_")}.json")
+                        }) {
                             Icon(Icons.Default.Download, contentDescription = "Download", tint = Color.White)
                         }
                     }
@@ -160,7 +175,7 @@ fun ViewCardsScreen(navController: NavController, viewModel: FlashcardViewModel,
                         icon = Icons.Outlined.Quiz, 
                         label = "Test", 
                         color = Color(0xFF3F51B5),
-                        onClick = { /* Future feature */ }
+                        onClick = { navController.navigate("test_screen/$setId") }
                     )
                 }
             }
@@ -178,6 +193,29 @@ fun ViewCardsScreen(navController: NavController, viewModel: FlashcardViewModel,
 
             item { Spacer(modifier = Modifier.height(32.dp)) }
         }
+    }
+}
+
+private fun saveSetToFile(context: Context, uri: Uri, title: String, cards: List<FlashcardItem>) {
+    try {
+        val jsonObject = JSONObject().apply {
+            put("title", title)
+            val cardsArray = JSONArray()
+            cards.forEach { card ->
+                val cardObject = JSONObject().apply {
+                    put("term", card.term)
+                    put("definition", card.definition)
+                }
+                cardsArray.put(cardObject)
+            }
+            put("cards", cardsArray)
+        }
+
+        context.contentResolver.openOutputStream(uri)?.use { outputStream ->
+            outputStream.write(jsonObject.toString(4).toByteArray())
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
     }
 }
 

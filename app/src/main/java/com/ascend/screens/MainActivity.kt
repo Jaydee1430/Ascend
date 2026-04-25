@@ -99,6 +99,16 @@ class MainActivity : ComponentActivity() {
                             val title = backStackEntry.arguments?.getString("title") ?: ""
                             EditSetScreen(navController, viewModel, setId, title)
                         }
+
+                        composable(
+                            "test_screen/{setId}",
+                            arguments = listOf(
+                                navArgument("setId") { type = NavType.IntType }
+                            )
+                        ) { backStackEntry ->
+                            val setId = backStackEntry.arguments?.getInt("setId") ?: 0
+                            TestScreen(navController, viewModel, setId)
+                        }
                     }
                 } else {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

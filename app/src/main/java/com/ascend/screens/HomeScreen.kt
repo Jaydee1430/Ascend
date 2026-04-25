@@ -1,17 +1,24 @@
 package com.ascend.screens
 
+import android.content.Context
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.CollectionsBookmark
+import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.FormatQuote
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -20,32 +27,34 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
+import com.ascend.R
 import com.ascend.data.FlashcardSet
 import com.ascend.data.UserDataStore
 import com.ascend.screens.ui.theme.CustomFloatingNavBar
 import com.ascend.ui.theme.bgColor
 import com.ascend.ui.theme.panel
 import com.ascend.ui.theme.primary
+import com.ascend.viewModel.FlashcardItemInternal
 import com.ascend.viewModel.FlashcardViewModel
+import org.json.JSONObject
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
-import com.ascend.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Home(navController: NavController, viewModel: FlashcardViewModel) {
     var selectedIndex by remember { mutableIntStateOf(0) }
     var showBottomSheet by remember { mutableStateOf(false) }
+    var showManualCreate by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
     
     val context = LocalContext.current
@@ -53,7 +62,6 @@ fun Home(navController: NavController, viewModel: FlashcardViewModel) {
     val username by userDataStore.username.collectAsState(initial = "Hunter")
     val currentExp by userDataStore.exp.collectAsState(initial = 0)
     
-    // Get rank info dynamically based on EXP
     val rankInfo = userDataStore.getNextRank(currentExp)
     val rank = rankInfo.first
     val nextRankExp = rankInfo.second
@@ -64,6 +72,16 @@ fun Home(navController: NavController, viewModel: FlashcardViewModel) {
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var cardCount by remember { mutableStateOf("5") }
+
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let { 
+            importSetFromFile(context, it, viewModel) {
+                showBottomSheet = false
+            }
+        }
+    }
 
     Scaffold(
         containerColor = bgColor
@@ -117,6 +135,7 @@ fun Home(navController: NavController, viewModel: FlashcardViewModel) {
                     onItemSelected = { index ->
                         if (index == 1) {
                             showBottomSheet = true
+                            showManualCreate = false
                         } else {
                             selectedIndex = index
                         }
@@ -127,7 +146,10 @@ fun Home(navController: NavController, viewModel: FlashcardViewModel) {
 
         if (showBottomSheet) {
             ModalBottomSheet(
-                onDismissRequest = { showBottomSheet = false },
+                onDismissRequest = { 
+                    showBottomSheet = false
+                    showManualCreate = false
+                },
                 sheetState = sheetState,
                 containerColor = panel,
                 contentColor = Color.White
@@ -138,47 +160,128 @@ fun Home(navController: NavController, viewModel: FlashcardViewModel) {
                         .padding(horizontal = 32.dp, vertical = 16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(text = "Create Flashcard Set", style = MaterialTheme.typography.headlineSmall, color = Color.White)
-                    Spacer(modifier = Modifier.height(24.dp))
-                    OutlinedTextField(
-                        value = title,
-                        onValueChange = { title = it },
-                        label = { Text("Title") },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    OutlinedTextField(
-                        value = description,
-                        onValueChange = { description = it },
-                        label = { Text("Description (Optional)") },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    OutlinedTextField(
-                        value = cardCount,
-                        onValueChange = { if (it.all { c -> c.isDigit() }) cardCount = it },
-                        label = { Text("Number of Cards") },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White)
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Button(
-                        onClick = {
-                            showBottomSheet = false
-                            val count = cardCount.toIntOrNull() ?: 5
-                            val encodedDesc = if (description.isEmpty()) "none" else URLEncoder.encode(description, StandardCharsets.UTF_8.toString())
-                            navController.navigate("create_cards/$title/$encodedDesc/$count")
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(primary),
-                        enabled = title.isNotBlank()
-                    ) {
-                        Text("Continue")
+                    if (!showManualCreate) {
+                        Text(text = "Create Flashcard Set", style = MaterialTheme.typography.headlineSmall, color = Color.White)
+                        Spacer(modifier = Modifier.height(24.dp))
+                        
+                        ImportOptionItem(
+                            title = "Import from File",
+                            subtitle = "Use a JSON file shared by others",
+                            icon = Icons.Default.FileUpload,
+                            onClick = { importLauncher.launch("application/json") }
+                        )
+                        
+                        Spacer(modifier = Modifier.height(12.dp))
+                        
+                        ImportOptionItem(
+                            title = "Create Flashcard Set",
+                            subtitle = "Build your set from scratch",
+                            icon = Icons.Default.Add,
+                            onClick = { showManualCreate = true }
+                        )
+                        
+                        Spacer(modifier = Modifier.height(32.dp))
+                    } else {
+                        Text(text = "Manual Configuration", style = MaterialTheme.typography.headlineSmall, color = Color.White)
+                        Spacer(modifier = Modifier.height(24.dp))
+                        OutlinedTextField(
+                            value = title,
+                            onValueChange = { title = it },
+                            label = { Text("Title") },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        OutlinedTextField(
+                            value = description,
+                            onValueChange = { description = it },
+                            label = { Text("Description (Optional)") },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        OutlinedTextField(
+                            value = cardCount,
+                            onValueChange = { if (it.all { c -> c.isDigit() }) cardCount = it },
+                            label = { Text("Number of Cards") },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                        )
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Button(
+                            onClick = {
+                                showBottomSheet = false
+                                showManualCreate = false
+                                val count = cardCount.toIntOrNull() ?: 5
+                                val encodedDesc = if (description.isEmpty()) "none" else URLEncoder.encode(description, StandardCharsets.UTF_8.toString())
+                                navController.navigate("create_cards/$title/$encodedDesc/$count")
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(primary),
+                            enabled = title.isNotBlank()
+                        ) {
+                            Text("Continue")
+                        }
+                        Spacer(modifier = Modifier.height(32.dp))
                     }
-                    Spacer(modifier = Modifier.height(32.dp))
                 }
+            }
+        }
+    }
+}
+
+private fun importSetFromFile(context: Context, uri: Uri, viewModel: FlashcardViewModel, onComplete: () -> Unit) {
+    try {
+        val jsonString = context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
+        if (jsonString != null) {
+            val jsonObject = JSONObject(jsonString)
+            val title = jsonObject.getString("title")
+            val cardsArray = jsonObject.getJSONArray("cards")
+            val cards = mutableListOf<FlashcardItemInternal>()
+            
+            for (i in 0 until cardsArray.length()) {
+                val cardObj = cardsArray.getJSONObject(i)
+                cards.add(FlashcardItemInternal(
+                    term = cardObj.getString("term"),
+                    definition = cardObj.getString("definition")
+                ))
+            }
+            
+            viewModel.saveSetWithCards(title, "Imported Set", cards) {
+                onComplete()
+            }
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+}
+
+@Composable
+fun ImportOptionItem(title: String, subtitle: String, icon: ImageVector, onClick: () -> Unit) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        color = Color.White.copy(alpha = 0.05f),
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(primary.copy(alpha = 0.2f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, contentDescription = null, tint = primary, modifier = Modifier.size(20.dp))
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column {
+                Text(text = title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text(text = subtitle, color = Color.Gray, fontSize = 12.sp)
             }
         }
     }
@@ -228,10 +331,10 @@ fun MainDashboard(
 fun QuoteWidget() {
     val quotes = listOf(
         "It doesn't matter how slow you go as long as you do not stop.",
-        "Your only limit is your soul.",
-        "The System uses the Hunter, and the Hunter uses the System.",
-        "Leveling up is the only way to survive.",
-        "If you don't want to regret your choices later, then don't make them in the first place."
+        "Your grades don’t define your limits—they show where you start leveling.",
+        "Consistency is your daily quest—miss it, and you lose experience.",
+        "Don’t run from difficult topics—those are your boss fights.",
+        "Every mistake is just feedback—an opportunity to get stronger."
     )
     val randomQuote = remember { quotes.random() }
 
@@ -351,7 +454,6 @@ fun UserProfileSection(username: String, exp: Int, nextRankExp: Int, rank: Strin
                             .clip(CircleShape)
                             .background(Color.Black.copy(alpha = 0.3f))
                     ) {
-                        // Calculate progress relative to current rank tier
                         val progress = if (nextRankExp > 0) exp.toFloat() / nextRankExp else 1f
                         Box(
                             modifier = Modifier

@@ -51,7 +51,7 @@ fun AscendSplashScreen(navController: NavController) {
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.ascend_logo),
+                    painter = painterResource(R.drawable.asclogo),
                     contentDescription = "Sword Icon",
                     modifier = Modifier.size(60.dp),
                     tint = primary
@@ -61,7 +61,7 @@ fun AscendSplashScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(48.dp))
 
             Text(
-                text = "ARISE",
+                text = "ASCEND",
                 color = Color.White,
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
@@ -71,7 +71,7 @@ fun AscendSplashScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Study, Level Up, Arise",
+                text = "Study, Level Up, Ascend",
                 color = Color.Gray,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
