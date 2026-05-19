@@ -17,13 +17,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.MilitaryTech
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Psychology
-import androidx.compose.material.icons.filled.RestartAlt
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -38,14 +33,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.ascend.R
 import com.ascend.data.UserDataStore
-import com.ascend.ui.theme.AscendTheme
 import com.ascend.ui.theme.bgColor
 import com.ascend.ui.theme.panel
 import com.ascend.ui.theme.primary
@@ -55,6 +47,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun SetupProfileScreen(navController: NavController) {
     var username by remember { mutableStateOf("") }
+    var notificationsEnabled by remember { mutableStateOf(true) }
     val context = LocalContext.current
     val userDataStore = remember { UserDataStore(context) }
     val scope = rememberCoroutineScope()
@@ -120,23 +113,43 @@ fun SetupProfileScreen(navController: NavController) {
                 )
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-            Text(
-                text = "You can change your Username later.",
-                color = Color.Gray.copy(alpha = 0.7f),
-                fontSize = 11.sp,
-                textAlign = TextAlign.Center
-            )
+            // Notification Ask Section
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color.White.copy(alpha = 0.05f))
+                    .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(12.dp))
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Default.Notifications, contentDescription = null, tint = primary)
+                Spacer(modifier = Modifier.width(16.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(text = "STUDY REMINDERS", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Text(text = "Notify every 8:00 AM", color = Color.Gray, fontSize = 11.sp)
+                }
+                Switch(
+                    checked = notificationsEnabled,
+                    onCheckedChange = { notificationsEnabled = it },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = primary
+                    )
+                )
+            }
 
-            Spacer(modifier = Modifier.height(64.dp))
+            Spacer(modifier = Modifier.height(48.dp))
 
             Button(
                 onClick = {
                     scope.launch {
                         userDataStore.saveUsername(username)
                         userDataStore.saveRank("E-RANK")
-                        userDataStore.completeSetup() // This ensures setup is marked as complete
+                        userDataStore.setNotificationsEnabled(notificationsEnabled)
+                        userDataStore.completeSetup()
                         navController.navigate("home") {
                             popUpTo("setup_profile") { inclusive = true }
                         }
@@ -172,7 +185,6 @@ fun ProfileScreen(navController: NavController, viewModel: FlashcardViewModel) {
     val rank by userDataStore.rank.collectAsState(initial = "E-RANK")
     val exp by userDataStore.exp.collectAsState(initial = 0)
     val notificationsEnabled by userDataStore.notificationsEnabled.collectAsState(initial = true)
-    val darkMode by userDataStore.darkMode.collectAsState(initial = true)
     val flashcardSets by viewModel.allSets.collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
     
@@ -181,7 +193,6 @@ fun ProfileScreen(navController: NavController, viewModel: FlashcardViewModel) {
 
     var showChangeUsernameDialog by remember { mutableStateOf(false) }
     var showHunterInfo by remember { mutableStateOf(false) }
-    var showSettings by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize().background(bgColor)) {
         Image(
@@ -264,15 +275,30 @@ fun ProfileScreen(navController: NavController, viewModel: FlashcardViewModel) {
                         onClick = { showChangeUsernameDialog = true }
                     )
                     ProfileMenuItem(
-                        icon = Icons.Default.Settings, 
-                        label = "System Settings",
-                        onClick = { showSettings = true }
-                    )
-                    ProfileMenuItem(
                         icon = Icons.Default.Info, 
                         label = "Hunter Information",
                         onClick = { showHunterInfo = true }
                     )
+                    // Individual item for notifications since system settings was removed
+                    Surface(
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        color = panel.copy(alpha = 0.6f)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.Notifications, contentDescription = null, tint = primary, modifier = Modifier.size(24.dp))
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text(text = "Study Reminders", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
+                            Switch(
+                                checked = notificationsEnabled,
+                                onCheckedChange = { scope.launch { userDataStore.setNotificationsEnabled(it) } },
+                                colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = primary)
+                            )
+                        }
+                    }
                 }
             }
 
@@ -307,200 +333,6 @@ fun ProfileScreen(navController: NavController, viewModel: FlashcardViewModel) {
                 onClose = { showHunterInfo = false }
             )
         }
-
-        // System Settings Window Overlay
-        AnimatedVisibility(
-            visible = showSettings,
-            enter = fadeIn(animationSpec = tween(300)),
-            exit = fadeOut(animationSpec = tween(300))
-        ) {
-            SystemSettingsWindow(
-                notificationsEnabled = notificationsEnabled,
-                darkMode = darkMode,
-                onToggleNotifications = { scope.launch { userDataStore.setNotificationsEnabled(it) } },
-                onToggleDarkMode = { scope.launch { userDataStore.setDarkMode(it) } },
-                onResetProgress = { 
-                    scope.launch { 
-                        userDataStore.clearData()
-                        navController.navigate("startscreen") {
-                            popUpTo(0) { inclusive = true }
-                        }
-                    } 
-                },
-                onClose = { showSettings = false }
-            )
-        }
-    }
-}
-
-@Composable
-fun SystemSettingsWindow(
-    notificationsEnabled: Boolean,
-    darkMode: Boolean,
-    onToggleNotifications: (Boolean) -> Unit,
-    onToggleDarkMode: (Boolean) -> Unit,
-    onResetProgress: () -> Unit,
-    onClose: () -> Unit
-) {
-    var showResetConfirmation by remember { mutableStateOf(false) }
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.8f))
-            .clickable(enabled = true, onClick = onClose),
-        contentAlignment = Alignment.Center
-    ) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth(0.85f)
-                .border(2.dp, primary, RoundedCornerShape(16.dp))
-                .clickable(enabled = false) {},
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF0F0B21))
-        ) {
-            Column(
-                modifier = Modifier
-                    .padding(24.dp)
-                    .fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "SYSTEM SETTINGS",
-                        color = primary,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = 2.sp
-                    )
-                    IconButton(onClick = onClose) {
-                        Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.Gray)
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-                Divider(color = primary.copy(alpha = 0.5f), thickness = 1.dp)
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Settings Rows
-                SettingSwitchRow(
-                    label = "SYSTEM ALERTS",
-                    description = "Enable notifications",
-                    checked = notificationsEnabled,
-                    onCheckedChange = onToggleNotifications,
-                    icon = Icons.Default.Notifications
-                )
-
-
-                Spacer(modifier = Modifier.height(16.dp))
-                Divider(color = Color.Gray.copy(alpha = 0.2f), thickness = 1.dp)
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Danger Zone
-                Text(
-                    text = "DANGER ZONE",
-                    color = Color(0xFFE91E63),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp
-                )
-                
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .clickable { showResetConfirmation = true },
-                    shape = RoundedCornerShape(8.dp),
-                    color = Color(0xFFE91E63).copy(alpha = 0.1f),
-                    border = BorderStroke(1.dp, Color(0xFFE91E63).copy(alpha = 0.3f))
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Default.RestartAlt, contentDescription = null, tint = Color(0xFFE91E63))
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Text(text = "RESET ALL PROGRESS", color = Color(0xFFE91E63), fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-                
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp)
-                        .background(primary, RoundedCornerShape(8.dp))
-                        .clickable { onClose() },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(text = "CLOSE", color = Color.White, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
-                }
-            }
-        }
-
-        if (showResetConfirmation) {
-            AlertDialog(
-                onDismissRequest = { showResetConfirmation = false },
-                containerColor = Color(0xFF0F0B21),
-                title = { Text("WARNING", color = Color(0xFFE91E63), fontWeight = FontWeight.ExtraBold) },
-                text = { Text("This will permanently delete your hunter profile, EXP, rank, and all flashcard sets. This action cannot be undone.", color = Color.White) },
-                confirmButton = {
-                    Button(
-                        onClick = onResetProgress,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE91E63))
-                    ) {
-                        Text("RESET")
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showResetConfirmation = false }) {
-                        Text("CANCEL", color = Color.Gray)
-                    }
-                }
-            )
-        }
-    }
-}
-
-@Composable
-fun SettingSwitchRow(
-    label: String,
-    description: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    icon: ImageVector
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-            Icon(icon, contentDescription = null, tint = primary, modifier = Modifier.size(24.dp))
-            Spacer(modifier = Modifier.width(16.dp))
-            Column {
-                Text(text = label, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                Text(text = description, color = Color.Gray, fontSize = 11.sp)
-            }
-        }
-        Switch(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = Color.White,
-                checkedTrackColor = primary,
-                uncheckedThumbColor = Color.Gray,
-                uncheckedTrackColor = Color.Black.copy(alpha = 0.3f)
-            )
-        )
     }
 }
 
@@ -551,7 +383,7 @@ fun HunterInfoStatusWindow(
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
-                Divider(color = primary.copy(alpha = 0.5f), thickness = 1.dp)
+                HorizontalDivider(color = primary.copy(alpha = 0.5f), thickness = 1.dp)
                 Spacer(modifier = Modifier.height(24.dp))
 
                 StatusRow(label = "NAME", value = username.uppercase())

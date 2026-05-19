@@ -334,7 +334,7 @@ fun QuoteWidget() {
         "Your grades don’t define your limits—they show where you start leveling.",
         "Consistency is your daily quest—miss it, and you lose experience.",
         "Don’t run from difficult topics—those are your boss fights.",
-        "Every mistake is just feedback—an opportunity to get stronger."
+        "You won’t understand everything at first. Keep grinding until it becomes your power."
     )
     val randomQuote = remember { quotes.random() }
 
