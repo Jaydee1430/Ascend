@@ -31,10 +31,8 @@ fun EditSetScreen(
     val existingCards by viewModel.getCardsForSet(setId).collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
     
-    // We use a local state list to track changes before saving
     val editableCards = remember { mutableStateListOf<FlashcardItem>() }
     
-    // Initialize the editable list once data is loaded
     LaunchedEffect(existingCards) {
         if (editableCards.isEmpty() && existingCards.isNotEmpty()) {
             editableCards.addAll(existingCards)
@@ -54,11 +52,9 @@ fun EditSetScreen(
                     TextButton(
                         onClick = {
                             scope.launch {
-                                // 1. Delete all old cards for this set
                                 existingCards.forEach { viewModel.deleteFlashcard(it) }
-                                // 2. Insert the new/modified ones
                                 editableCards.filter { it.term.isNotBlank() && it.definition.isNotBlank() }.forEach {
-                                    viewModel.addFlashcard(it.copy(id = 0)) // reset id to auto-generate new ones
+                                    viewModel.addFlashcard(it.copy(id = 0))
                                 }
                                 navController.popBackStack()
                             }

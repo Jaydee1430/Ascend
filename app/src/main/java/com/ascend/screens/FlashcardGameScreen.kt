@@ -52,7 +52,6 @@ fun FlashcardGameScreen(navController: NavController, viewModel: FlashcardViewMo
     var wrongCount by remember { mutableIntStateOf(0) }
     var isFlipped by remember { mutableStateOf(false) }
 
-    // Swipe state
     val offsetX = remember { Animatable(0f) }
     val rotation = remember { Animatable(0f) }
 
@@ -63,7 +62,6 @@ fun FlashcardGameScreen(navController: NavController, viewModel: FlashcardViewMo
         return
     }
 
-    // Handle game completion
     if (currentIndex >= cards.size) {
         Box(modifier = Modifier.fillMaxSize().background(bgColor), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -87,7 +85,6 @@ fun FlashcardGameScreen(navController: NavController, viewModel: FlashcardViewMo
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
-        // --- Header ---
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -110,20 +107,18 @@ fun FlashcardGameScreen(navController: NavController, viewModel: FlashcardViewMo
             }
         }
 
-        // --- Score Counters ---
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            ScoreIndicator(count = wrongCount, color = Color(0xFFE91E63)) // Reddish for wrong
-            ScoreIndicator(count = correctCount, color = Color(0xFF4CAF50)) // Green for correct
+            ScoreIndicator(count = wrongCount, color = Color(0xFFE91E63))
+            ScoreIndicator(count = correctCount, color = Color(0xFF4CAF50))
         }
 
         Spacer(modifier = Modifier.weight(0.1f))
 
-        // --- Swipeable Card ---
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -139,12 +134,11 @@ fun FlashcardGameScreen(navController: NavController, viewModel: FlashcardViewMo
                     .pointerInput(Unit) {
                         detectDragGestures(
                             onDragEnd = {
-                                if (offsetX.value > 300) { // Reduced threshold for better feel
-                                    // Swipe Right (Correct)
+                                if (offsetX.value > 300) {
+
                                     scope.launch {
                                         correctCount++
                                         userDataStore.addExp(3)
-                                        // Animate fly-off and rotation together
                                         launch { rotation.animateTo(offsetX.value / 10f) }
                                         offsetX.animateTo(1200f, animationSpec = tween(300))
                                         
@@ -154,7 +148,6 @@ fun FlashcardGameScreen(navController: NavController, viewModel: FlashcardViewMo
                                         isFlipped = false
                                     }
                                 } else if (offsetX.value < -300) {
-                                    // Swipe Left (Wrong)
                                     scope.launch {
                                         wrongCount++
                                         launch { rotation.animateTo(offsetX.value / 10f) }
@@ -166,7 +159,6 @@ fun FlashcardGameScreen(navController: NavController, viewModel: FlashcardViewMo
                                         isFlipped = false
                                     }
                                 } else {
-                                    // Snap back
                                     scope.launch {
                                         launch { offsetX.animateTo(0f, spring(Spring.DampingRatioMediumBouncy)) }
                                         launch { rotation.animateTo(0f, spring(Spring.DampingRatioMediumBouncy)) }
@@ -177,7 +169,7 @@ fun FlashcardGameScreen(navController: NavController, viewModel: FlashcardViewMo
                                 change.consume()
                                 scope.launch {
                                     offsetX.snapTo(offsetX.value + dragAmount.x)
-                                    rotation.snapTo(offsetX.value / 15f) // Subtle rotation during drag
+                                    rotation.snapTo(offsetX.value / 15f) 
                                 }
                             }
                         )
@@ -211,7 +203,6 @@ fun FlashcardGameScreen(navController: NavController, viewModel: FlashcardViewMo
 
         Spacer(modifier = Modifier.weight(0.1f))
 
-        // --- Bottom Controls ---
         Row(
             modifier = Modifier
                 .fillMaxWidth()

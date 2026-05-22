@@ -55,7 +55,6 @@ fun TestScreen(navController: NavController, viewModel: FlashcardViewModel, setI
     var selectedOption by remember { mutableStateOf<String?>(null) }
     var isFinished by remember { mutableStateOf(false) }
 
-    // Generate questions once cards are loaded
     LaunchedEffect(cards) {
         if (cards.size >= 2 && questions.isEmpty()) {
             questions = cards.shuffled().map { card ->
@@ -121,7 +120,6 @@ fun TestScreen(navController: NavController, viewModel: FlashcardViewModel, setI
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
-        // --- Header ---
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -140,7 +138,6 @@ fun TestScreen(navController: NavController, viewModel: FlashcardViewModel, setI
                 letterSpacing = 1.sp
             )
 
-            // Progress indicator
             Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(
                     progress = { (currentIndex + 1).toFloat() / questions.size },
@@ -160,7 +157,6 @@ fun TestScreen(navController: NavController, viewModel: FlashcardViewModel, setI
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // --- Question Card ---
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -183,7 +179,6 @@ fun TestScreen(navController: NavController, viewModel: FlashcardViewModel, setI
 
         Spacer(modifier = Modifier.height(48.dp))
 
-        // --- Options ---
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -202,10 +197,9 @@ fun TestScreen(navController: NavController, viewModel: FlashcardViewModel, setI
                             selectedOption = option
                             if (isCorrect) {
                                 score++
-                                scope.launch { userDataStore.addExp(5) } // 5 EXP for each correct answer in test
+                                scope.launch { userDataStore.addExp(5) }
                             }
                             
-                            // Move to next question after delay
                             scope.launch {
                                 kotlinx.coroutines.delay(1000)
                                 if (currentIndex < questions.size - 1) {
@@ -305,7 +299,6 @@ fun TestResultScreen(score: Int, total: Int, onReturn: () -> Unit, onRestart: ()
             
             Spacer(modifier = Modifier.height(48.dp))
             
-            // Score circle
             Box(contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(
                     progress = { score.toFloat() / total },

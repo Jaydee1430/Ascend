@@ -115,7 +115,6 @@ fun SetupProfileScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Notification Ask Section
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -209,7 +208,6 @@ fun ProfileScreen(navController: NavController, viewModel: FlashcardViewModel) {
         ) {
             item { Spacer(modifier = Modifier.height(64.dp)) }
 
-            // --- Profile Header ---
             item {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                     Box(
@@ -228,7 +226,6 @@ fun ProfileScreen(navController: NavController, viewModel: FlashcardViewModel) {
                 }
             }
 
-            // --- Stats Section ---
             item {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     StatCard(modifier = Modifier.weight(1f), label = "TOTAL EXP", value = exp.toString(), icon = Icons.Default.TrendingUp)
@@ -236,7 +233,6 @@ fun ProfileScreen(navController: NavController, viewModel: FlashcardViewModel) {
                 }
             }
 
-            // --- Progress Section ---
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -266,7 +262,6 @@ fun ProfileScreen(navController: NavController, viewModel: FlashcardViewModel) {
                 }
             }
 
-            // --- Menu Options ---
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     ProfileMenuItem(
@@ -279,7 +274,6 @@ fun ProfileScreen(navController: NavController, viewModel: FlashcardViewModel) {
                         label = "Hunter Information",
                         onClick = { showHunterInfo = true }
                     )
-                    // Individual item for notifications since system settings was removed
                     Surface(
                         modifier = Modifier.fillMaxWidth().height(56.dp),
                         shape = RoundedCornerShape(12.dp),
@@ -318,7 +312,6 @@ fun ProfileScreen(navController: NavController, viewModel: FlashcardViewModel) {
             )
         }
 
-        // Hunter Info Status Window Overlay
         AnimatedVisibility(
             visible = showHunterInfo,
             enter = fadeIn(animationSpec = tween(300)),

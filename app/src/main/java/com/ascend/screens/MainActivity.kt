@@ -46,7 +46,6 @@ class MainActivity : ComponentActivity() {
             val userDataStore = remember { UserDataStore(context) }
             val setupComplete by userDataStore.setupComplete.collectAsState(initial = null)
 
-            // Request Notification Permission for Android 13+
             val permissionLauncher = rememberLauncherForActivityResult(
                 ActivityResultContracts.RequestPermission()
             ) { isGranted ->
@@ -169,7 +168,6 @@ class MainActivity : ComponentActivity() {
             set(Calendar.MINUTE, 0)
             set(Calendar.SECOND, 0)
             
-            // If it's already past 8 AM, schedule for tomorrow
             if (before(Calendar.getInstance())) {
                 add(Calendar.DATE, 1)
             }
@@ -183,7 +181,6 @@ class MainActivity : ComponentActivity() {
                     pendingIntent
                 )
             } else {
-                // Fallback for devices where exact alarm permission isn't granted
                 alarmManager.setAndAllowWhileIdle(
                     AlarmManager.RTC_WAKEUP,
                     calendar.timeInMillis,

@@ -63,7 +63,6 @@ fun ViewCardsScreen(navController: NavController, viewModel: FlashcardViewModel,
     }
 
     Box(modifier = Modifier.fillMaxSize().background(bgColor)) {
-        // --- Background Image ---
         Image(
             painter = painterResource(id = R.drawable.ascend_bg),
             contentDescription = null,
@@ -78,7 +77,6 @@ fun ViewCardsScreen(navController: NavController, viewModel: FlashcardViewModel,
                 .statusBarsPadding()
         ) {
 
-            // --- Custom Top Bar ---
             item {
                 Row(
                     modifier = Modifier
@@ -99,7 +97,6 @@ fun ViewCardsScreen(navController: NavController, viewModel: FlashcardViewModel,
                     Spacer(modifier = Modifier.weight(1f))
 
                     Row {
-                        // This button now navigates to the dedicated Edit Set screen
                         IconButton(onClick = { navController.navigate("edit_set/$setId/$title") }) {
                             Icon(Icons.Default.Edit, contentDescription = "Edit set", tint = Color.White)
                         }
@@ -107,7 +104,6 @@ fun ViewCardsScreen(navController: NavController, viewModel: FlashcardViewModel,
                 }
             }
 
-            // --- Flashcard Carousel ---
             item {
                 if (cards.isNotEmpty()) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -138,7 +134,6 @@ fun ViewCardsScreen(navController: NavController, viewModel: FlashcardViewModel,
 
             item { Spacer(modifier = Modifier.height(32.dp)) }
 
-            // --- Set Info Section ---
             item {
                 Column(modifier = Modifier.padding(horizontal = 24.dp)) {
                     Row(
@@ -159,7 +154,6 @@ fun ViewCardsScreen(navController: NavController, viewModel: FlashcardViewModel,
 
             item { Spacer(modifier = Modifier.height(24.dp)) }
 
-            // --- Action Menu ---
             item {
                 Column(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
@@ -186,7 +180,6 @@ fun ViewCardsScreen(navController: NavController, viewModel: FlashcardViewModel,
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
-            // --- Scrollable Review List ---
             items(cards) { card ->
                 TermDefinitionReviewItem(card)
             }

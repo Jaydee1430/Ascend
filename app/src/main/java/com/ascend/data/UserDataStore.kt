@@ -83,7 +83,6 @@ class UserDataStore(context: Context) {
             val currentExp = (preferences[EXP_KEY] ?: 0) + amount
             preferences[EXP_KEY] = currentExp
             
-            // Auto Rank Up logic
             val currentRank = preferences[RANK_KEY] ?: "E-RANK"
             val nextRankInfo = getNextRank(currentExp)
             if (nextRankInfo.first != currentRank) {
@@ -102,7 +101,7 @@ class UserDataStore(context: Context) {
                 nextRankReq = if (i + 1 < RANK_REQUIREMENTS.size) {
                     RANK_REQUIREMENTS[i + 1].second
                 } else {
-                    RANK_REQUIREMENTS[i].second // Max rank reached
+                    RANK_REQUIREMENTS[i].second
                 }
             } else {
                 break

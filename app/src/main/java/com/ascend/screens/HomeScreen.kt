@@ -68,7 +68,6 @@ fun Home(navController: NavController, viewModel: FlashcardViewModel) {
 
     val flashcardSets by viewModel.allSets.collectAsState(initial = emptyList())
 
-    // Form states for BottomSheet
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var cardCount by remember { mutableStateOf("5") }
@@ -98,7 +97,6 @@ fun Home(navController: NavController, viewModel: FlashcardViewModel) {
                 contentScale = ContentScale.Crop,
                 alpha = 0.5f
             )
-            // Screen Switcher
             when (selectedIndex) {
                 0 -> MainDashboard(
                     sets = flashcardSets,
@@ -440,7 +438,6 @@ fun UserProfileSection(username: String, exp: Int, nextRankExp: Int, rank: Strin
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // EXP Bar
                 Column {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text(text = "EXP", color = Color.Gray, fontSize = 10.sp)

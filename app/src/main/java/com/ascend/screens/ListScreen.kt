@@ -47,7 +47,6 @@ fun FlashcardListScreen(sets: List<FlashcardSet>, onCardClick: (FlashcardSet) ->
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Subtle Divider Line
         Box(
             modifier = Modifier
                 .fillMaxWidth()
