@@ -3,24 +3,19 @@ package com.ascend.screens
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.outlined.StarBorder
-import androidx.compose.material.icons.outlined.VolumeUp
-import androidx.compose.material.icons.outlined.West
+import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -42,7 +37,9 @@ import kotlin.math.roundToInt
 
 @Composable
 fun FlashcardGameScreen(navController: NavController, viewModel: FlashcardViewModel, setId: Int) {
-    val cards by viewModel.getCardsForSet(setId).collectAsState(initial = emptyList())
+    val initialCards by viewModel.getCardsForSet(setId).collectAsState(initial = emptyList())
+    var gameCards by remember { mutableStateOf<List<FlashcardItem>>(emptyList()) }
+    
     val context = LocalContext.current
     val userDataStore = remember { UserDataStore(context) }
     val scope = rememberCoroutineScope()
@@ -52,17 +49,28 @@ fun FlashcardGameScreen(navController: NavController, viewModel: FlashcardViewMo
     var wrongCount by remember { mutableIntStateOf(0) }
     var isFlipped by remember { mutableStateOf(false) }
 
+    // Option to choose what to show in front (true = Term, false = Definition)
+    // Defaulting to false (Definition) as requested
+    var showTermOnFront by remember { mutableStateOf(false) }
+    var settingsExpanded by remember { mutableStateOf(false) }
+
     val offsetX = remember { Animatable(0f) }
     val rotation = remember { Animatable(0f) }
 
-    if (cards.isEmpty()) {
+    LaunchedEffect(initialCards) {
+        if (gameCards.isEmpty() && initialCards.isNotEmpty()) {
+            gameCards = initialCards
+        }
+    }
+
+    if (gameCards.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize().background(bgColor), contentAlignment = Alignment.Center) {
             CircularProgressIndicator(color = primary)
         }
         return
     }
 
-    if (currentIndex >= cards.size) {
+    if (currentIndex >= gameCards.size) {
         Box(modifier = Modifier.fillMaxSize().background(bgColor), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("SESSION COMPLETE", color = primary, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
@@ -76,7 +84,7 @@ fun FlashcardGameScreen(navController: NavController, viewModel: FlashcardViewMo
         return
     }
 
-    val currentCard = cards[currentIndex]
+    val currentCard = gameCards[currentIndex]
 
     Column(
         modifier = Modifier
@@ -97,13 +105,50 @@ fun FlashcardGameScreen(navController: NavController, viewModel: FlashcardViewMo
             }
 
             Text(
-                text = "${currentIndex + 1} / ${cards.size}",
+                text = "${currentIndex + 1} / ${gameCards.size}",
                 color = Color.White,
                 fontWeight = FontWeight.Medium
             )
 
-            IconButton(onClick = { }) {
-                Icon(Icons.Default.Settings, contentDescription = "Settings", tint = Color.White)
+            Box {
+                IconButton(onClick = { settingsExpanded = true }) {
+                    Icon(Icons.Default.Settings, contentDescription = "Settings", tint = Color.White)
+                }
+                DropdownMenu(
+                    expanded = settingsExpanded,
+                    onDismissRequest = { settingsExpanded = false },
+                    modifier = Modifier.background(panel)
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Show Term on Front", color = Color.White) },
+                        trailingIcon = { if (showTermOnFront) Icon(Icons.Default.Done, null, tint = primary) },
+                        onClick = {
+                            showTermOnFront = true
+                            settingsExpanded = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Show Definition on Front", color = Color.White) },
+                        trailingIcon = { if (!showTermOnFront) Icon(Icons.Default.Done, null, tint = primary) },
+                        onClick = {
+                            showTermOnFront = false
+                            settingsExpanded = false
+                        }
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), color = Color.White.copy(alpha = 0.1f))
+                    DropdownMenuItem(
+                        text = { Text("Shuffle Cards", color = Color.White) },
+                        leadingIcon = { Icon(Icons.Default.Shuffle, contentDescription = null, tint = Color.White) },
+                        onClick = {
+                            gameCards = gameCards.shuffled()
+                            currentIndex = 0
+                            correctCount = 0
+                            wrongCount = 0
+                            isFlipped = false
+                            settingsExpanded = false
+                        }
+                    )
+                }
             }
         }
 
@@ -135,7 +180,6 @@ fun FlashcardGameScreen(navController: NavController, viewModel: FlashcardViewMo
                         detectDragGestures(
                             onDragEnd = {
                                 if (offsetX.value > 300) {
-
                                     scope.launch {
                                         correctCount++
                                         userDataStore.addExp(3)
@@ -169,7 +213,7 @@ fun FlashcardGameScreen(navController: NavController, viewModel: FlashcardViewMo
                                 change.consume()
                                 scope.launch {
                                     offsetX.snapTo(offsetX.value + dragAmount.x)
-                                    rotation.snapTo(offsetX.value / 15f) 
+                                    rotation.snapTo(offsetX.value / 15f)
                                 }
                             }
                         )
@@ -180,16 +224,11 @@ fun FlashcardGameScreen(navController: NavController, viewModel: FlashcardViewMo
                 border = BorderStroke(1.dp, Color(0xFF2E2A5B))
             ) {
                 Box(modifier = Modifier.fillMaxSize().padding(24.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Icon(Icons.Outlined.VolumeUp, contentDescription = null, tint = Color.Gray)
-                        Icon(Icons.Outlined.StarBorder, contentDescription = null, tint = Color.Gray)
-                    }
+                    val frontText = if (showTermOnFront) currentCard.term else currentCard.definition
+                    val backText = if (showTermOnFront) currentCard.definition else currentCard.term
 
                     Text(
-                        text = if (isFlipped) currentCard.definition else currentCard.term,
+                        text = if (isFlipped) backText else frontText,
                         color = Color.White,
                         fontSize = 28.sp,
                         fontWeight = FontWeight.Medium,
