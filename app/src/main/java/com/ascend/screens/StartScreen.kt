@@ -61,7 +61,7 @@ fun AscendSplashScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(48.dp))
 
             Text(
-                text = "ASCEND",
+                text = "ARISE",
                 color = Color.White,
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
@@ -71,7 +71,7 @@ fun AscendSplashScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Study, Level Up, Ascend",
+                text = "Study, Level Up, Arise",
                 color = Color.Gray,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,

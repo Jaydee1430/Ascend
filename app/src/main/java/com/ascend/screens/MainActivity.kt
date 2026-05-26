@@ -85,6 +85,10 @@ class MainActivity : ComponentActivity() {
                             Home(navController, viewModel)
                         }
 
+                        composable("ai_tutor") {
+                            AiTutorScreen(navController)
+                        }
+
                         composable(
                             "create_cards/{title}/{description}/{count}",
                             arguments = listOf(

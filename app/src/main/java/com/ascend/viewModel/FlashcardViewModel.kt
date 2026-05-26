@@ -46,6 +46,13 @@ class FlashcardViewModel(application: Application) : AndroidViewModel(applicatio
             dao.deleteFlashcard(card)
         }
     }
+
+    fun deleteSet(setId: Int, title: String, onComplete: () -> Unit = {}) {
+        viewModelScope.launch {
+            dao.deleteSet(FlashcardSet(id = setId, title = title, description = ""))
+            onComplete()
+        }
+    }
 }
 
 data class FlashcardItemInternal(val term: String, val definition: String)

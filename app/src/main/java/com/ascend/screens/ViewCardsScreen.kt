@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Fullscreen
@@ -53,6 +54,8 @@ fun ViewCardsScreen(navController: NavController, viewModel: FlashcardViewModel,
     val cards by viewModel.getCardsForSet(setId).collectAsState(initial = emptyList())
     val pagerState = rememberPagerState(pageCount = { cards.size })
     val context = LocalContext.current
+    var showDeleteSetDialog by remember { mutableStateOf(false) }
+    var cardToDelete by remember { mutableStateOf<FlashcardItem?>(null) }
 
     val createDocumentLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json")
@@ -127,7 +130,7 @@ fun ViewCardsScreen(navController: NavController, viewModel: FlashcardViewModel,
                     }
                 } else {
                     Box(modifier = Modifier.fillMaxWidth().height(260.dp), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = primary)
+                        Text("No cards in this set.", color = Color.Gray)
                     }
                 }
             }
@@ -171,6 +174,12 @@ fun ViewCardsScreen(navController: NavController, viewModel: FlashcardViewModel,
                         color = Color(0xFF3F51B5),
                         onClick = { navController.navigate("test_screen/$setId") }
                     )
+                    ActionMenuItem(
+                        icon = Icons.Default.Delete,
+                        label = "Delete Set",
+                        color = Color(0xFFFF6B8A),
+                        onClick = { showDeleteSetDialog = true }
+                    )
                 }
             }
 
@@ -181,11 +190,78 @@ fun ViewCardsScreen(navController: NavController, viewModel: FlashcardViewModel,
             }
 
             items(cards) { card ->
-                TermDefinitionReviewItem(card)
+                TermDefinitionReviewItem(
+                    card = card,
+                    onDeleteClick = { cardToDelete = card }
+                )
             }
 
             item { Spacer(modifier = Modifier.height(32.dp)) }
         }
+    }
+
+    if (showDeleteSetDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteSetDialog = false },
+            title = {
+                Text("Delete set?", color = Color.White)
+            },
+            text = {
+                Text(
+                    text = "This will delete \"$title\" and all ${cards.size} cards in it. This cannot be undone.",
+                    color = Color.Gray
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deleteSet(setId, title) {
+                            showDeleteSetDialog = false
+                            navController.popBackStack()
+                        }
+                    }
+                ) {
+                    Text("Delete", color = Color(0xFFFF6B8A))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteSetDialog = false }) {
+                    Text("Cancel", color = primary)
+                }
+            },
+            containerColor = panel
+        )
+    }
+
+    cardToDelete?.let { card ->
+        AlertDialog(
+            onDismissRequest = { cardToDelete = null },
+            title = {
+                Text("Delete flashcard?", color = Color.White)
+            },
+            text = {
+                Text(
+                    text = "This will remove \"${card.term}\" from this set.",
+                    color = Color.Gray
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deleteFlashcard(card)
+                        cardToDelete = null
+                    }
+                ) {
+                    Text("Delete", color = Color(0xFFFF6B8A))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { cardToDelete = null }) {
+                    Text("Cancel", color = primary)
+                }
+            },
+            containerColor = panel
+        )
     }
 }
 
@@ -213,14 +289,34 @@ private fun saveSetToFile(context: Context, uri: Uri, title: String, cards: List
 }
 
 @Composable
-fun TermDefinitionReviewItem(card: FlashcardItem) {
+fun TermDefinitionReviewItem(card: FlashcardItem, onDeleteClick: () -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
         shape = RoundedCornerShape(12.dp),
         color = panel.copy(alpha = 0.8f)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = card.term, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = card.term,
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
+                )
+                IconButton(onClick = onDeleteClick, modifier = Modifier.size(36.dp)) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Delete flashcard",
+                        tint = Color(0xFFFF6B8A).copy(alpha = 0.85f),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = card.definition, color = Color.Gray, fontSize = 14.sp)
         }

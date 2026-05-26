@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.CollectionsBookmark
 import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.FormatQuote
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -104,6 +105,9 @@ fun Home(navController: NavController, viewModel: FlashcardViewModel) {
                     rank = rank,
                     exp = currentExp,
                     nextRankExp = nextRankExp,
+                    onAskAiClick = {
+                        navController.navigate("ai_tutor")
+                    },
                     onCardClick = { set ->
                         navController.navigate("view_cards/${set.id}/${set.title}")
                     },
@@ -292,6 +296,7 @@ fun MainDashboard(
     rank: String, 
     exp: Int, 
     nextRankExp: Int, 
+    onAskAiClick: () -> Unit,
     onCardClick: (FlashcardSet) -> Unit,
     onViewAllClick: () -> Unit
 ) {
@@ -307,6 +312,10 @@ fun MainDashboard(
 
         item {
             QuoteWidget()
+        }
+
+        item {
+            StudyAssistantWidget(onClick = onAskAiClick)
         }
 
         item {
@@ -371,6 +380,39 @@ fun QuoteWidget() {
                     letterSpacing = 2.sp
                 )
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun StudyAssistantWidget(onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = panel.copy(alpha = 0.86f)),
+        border = BorderStroke(1.dp, primary.copy(alpha = 0.4f))
+    ) {
+        Row(
+            modifier = Modifier.padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(primary.copy(alpha = 0.16f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.School, contentDescription = null, tint = primary, modifier = Modifier.size(26.dp))
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = "ASK BERU", color = primary, fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                Text(text = "Your shadow study guide", color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.ExtraBold)
+            }
+            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.Gray)
         }
     }
 }

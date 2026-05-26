@@ -68,7 +68,7 @@ class StudyNotificationReceiver : BroadcastReceiver() {
 
         val notification = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("Time to Ascend!")
+            .setContentTitle("Time to Arise!")
             .setContentText("It's 8:00 AM. Time to study your flashcards and level up!")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pendingIntent)
