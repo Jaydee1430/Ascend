@@ -9,6 +9,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -44,7 +46,8 @@ data class Question(
 
 @Composable
 fun TestScreen(navController: NavController, viewModel: FlashcardViewModel, setId: Int) {
-    val cards by viewModel.getCardsForSet(setId).collectAsState(initial = emptyList())
+    val cardsState by viewModel.getCardsForSet(setId).collectAsState(initial = null)
+    val cards = cardsState.orEmpty()
     val context = LocalContext.current
     val userDataStore = remember { UserDataStore(context) }
     val scope = rememberCoroutineScope()
@@ -55,27 +58,35 @@ fun TestScreen(navController: NavController, viewModel: FlashcardViewModel, setI
     var selectedOption by remember { mutableStateOf<String?>(null) }
     var isFinished by remember { mutableStateOf(false) }
 
-    LaunchedEffect(cards) {
+    LaunchedEffect(cardsState) {
         if (cards.size >= 2 && questions.isEmpty()) {
             questions = cards.shuffled().map { card ->
                 val distractors = cards.filter { it.id != card.id }
                     .shuffled()
                     .take(3)
-                    .map { it.definition }
+                    .map { it.term }
                 
                 Question(
-                    term = card.term,
-                    correctAnswer = card.definition,
-                    options = (distractors + card.definition).shuffled()
+                    term = card.definition,
+                    correctAnswer = card.term,
+                    options = (distractors + card.term).shuffled()
                 )
             }
         }
     }
 
-    if (cards.isEmpty() || questions.isEmpty()) {
+    if (cardsState == null || cards.isEmpty() || questions.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize().background(bgColor), contentAlignment = Alignment.Center) {
-            if (cards.isEmpty()) {
-                Text("Loading cards...", color = Color.White)
+            if (cardsState == null) {
+                CircularProgressIndicator(color = primary)
+            } else if (cards.isEmpty()) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("No cards available for this test.", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(onClick = { navController.popBackStack() }, colors = ButtonDefaults.buttonColors(primary)) {
+                        Text("RETURN")
+                    }
+                }
             } else if (cards.size < 2) {
                 Text("Need at least 2 cards for a test.", color = Color.White)
             } else {
@@ -99,11 +110,11 @@ fun TestScreen(navController: NavController, viewModel: FlashcardViewModel, setI
                     val distractors = cards.filter { it.id != card.id }
                         .shuffled()
                         .take(3)
-                        .map { it.definition }
+                        .map { it.term }
                     Question(
-                        term = card.term,
-                        correctAnswer = card.definition,
-                        options = (distractors + card.definition).shuffled()
+                        term = card.definition,
+                        correctAnswer = card.term,
+                        options = (distractors + card.term).shuffled()
                     )
                 }
             }
@@ -112,6 +123,11 @@ fun TestScreen(navController: NavController, viewModel: FlashcardViewModel, setI
     }
 
     val currentQuestion = questions[currentIndex]
+    val questionScrollState = rememberScrollState()
+
+    LaunchedEffect(currentIndex) {
+        questionScrollState.scrollTo(0)
+    }
 
     Column(
         modifier = Modifier
@@ -161,23 +177,35 @@ fun TestScreen(navController: NavController, viewModel: FlashcardViewModel, setI
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp)
-                .height(200.dp),
+                .heightIn(min = 180.dp, max = 280.dp),
             shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(containerColor = panel),
             border = BorderStroke(1.dp, Color(0xFF2E2A5B))
         ) {
-            Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(questionScrollState)
+                    .padding(24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                val questionFontSize = when {
+                    currentQuestion.term.length > 180 -> 16.sp
+                    currentQuestion.term.length > 100 -> 18.sp
+                    else -> 22.sp
+                }
                 Text(
                     text = currentQuestion.term,
                     color = Color.White,
-                    fontSize = 24.sp,
+                    fontSize = questionFontSize,
                     fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    lineHeight = questionFontSize * 1.35
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(48.dp))
+        Spacer(modifier = Modifier.height(28.dp))
 
         Column(
             modifier = Modifier

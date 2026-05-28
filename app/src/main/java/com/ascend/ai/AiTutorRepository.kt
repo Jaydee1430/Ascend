@@ -25,8 +25,8 @@ class AiTutorRepository(
                 proxyEndpoint.isNotBlank() -> callProxy(messages)
                 geminiApiKey.isNotBlank() -> callGeminiDirectly(messages)
                 else -> throw IllegalStateException(
-                    "Beru is not configured yet. Add AI_TUTOR_PROXY_URL to local.properties, " +
-                        "or add GEMINI_API_KEY for a demo-only direct Gemini setup."
+                    "Try Again"
+
                 )
             }
         }

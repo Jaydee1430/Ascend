@@ -37,7 +37,8 @@ import kotlin.math.roundToInt
 
 @Composable
 fun FlashcardGameScreen(navController: NavController, viewModel: FlashcardViewModel, setId: Int) {
-    val initialCards by viewModel.getCardsForSet(setId).collectAsState(initial = emptyList())
+    val initialCardsState by viewModel.getCardsForSet(setId).collectAsState(initial = null)
+    val initialCards = initialCardsState.orEmpty()
     var gameCards by remember { mutableStateOf<List<FlashcardItem>>(emptyList()) }
     
     val context = LocalContext.current
@@ -57,15 +58,28 @@ fun FlashcardGameScreen(navController: NavController, viewModel: FlashcardViewMo
     val offsetX = remember { Animatable(0f) }
     val rotation = remember { Animatable(0f) }
 
-    LaunchedEffect(initialCards) {
+    LaunchedEffect(initialCardsState) {
         if (gameCards.isEmpty() && initialCards.isNotEmpty()) {
             gameCards = initialCards
         }
     }
 
-    if (gameCards.isEmpty()) {
+    if (initialCardsState == null) {
         Box(modifier = Modifier.fillMaxSize().background(bgColor), contentAlignment = Alignment.Center) {
             CircularProgressIndicator(color = primary)
+        }
+        return
+    }
+
+    if (gameCards.isEmpty()) {
+        Box(modifier = Modifier.fillMaxSize().background(bgColor), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("No cards in this set.", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(onClick = { navController.popBackStack() }, colors = ButtonDefaults.buttonColors(primary)) {
+                    Text("RETURN")
+                }
+            }
         }
         return
     }

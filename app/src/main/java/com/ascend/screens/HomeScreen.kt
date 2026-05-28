@@ -47,8 +47,6 @@ import com.ascend.ui.theme.primary
 import com.ascend.viewModel.FlashcardItemInternal
 import com.ascend.viewModel.FlashcardViewModel
 import org.json.JSONObject
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -109,14 +107,14 @@ fun Home(navController: NavController, viewModel: FlashcardViewModel) {
                         navController.navigate("ai_tutor")
                     },
                     onCardClick = { set ->
-                        navController.navigate("view_cards/${set.id}/${set.title}")
+                        navController.navigate("view_cards/${set.id}/${Uri.encode(set.title)}")
                     },
                     onViewAllClick = { selectedIndex = 2 }
                 )
                 2 -> FlashcardListScreen(
                     sets = flashcardSets,
                     onCardClick = { set ->
-                        navController.navigate("view_cards/${set.id}/${set.title}")
+                        navController.navigate("view_cards/${set.id}/${Uri.encode(set.title)}")
                     }
                 )
                 3 -> ProfileScreen(navController = navController, viewModel = viewModel)
@@ -215,8 +213,9 @@ fun Home(navController: NavController, viewModel: FlashcardViewModel) {
                                 showBottomSheet = false
                                 showManualCreate = false
                                 val count = cardCount.toIntOrNull() ?: 5
-                                val encodedDesc = if (description.isEmpty()) "none" else URLEncoder.encode(description, StandardCharsets.UTF_8.toString())
-                                navController.navigate("create_cards/$title/$encodedDesc/$count")
+                                val encodedTitle = Uri.encode(title)
+                                val encodedDesc = if (description.isEmpty()) "none" else Uri.encode(description)
+                                navController.navigate("create_cards/$encodedTitle/$encodedDesc/$count")
                             },
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(primary),

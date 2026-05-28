@@ -51,7 +51,8 @@ import org.json.JSONObject
 
 @Composable
 fun ViewCardsScreen(navController: NavController, viewModel: FlashcardViewModel, setId: Int, title: String) {
-    val cards by viewModel.getCardsForSet(setId).collectAsState(initial = emptyList())
+    val cardsState by viewModel.getCardsForSet(setId).collectAsState(initial = null)
+    val cards = cardsState.orEmpty()
     val pagerState = rememberPagerState(pageCount = { cards.size })
     val context = LocalContext.current
     var showDeleteSetDialog by remember { mutableStateOf(false) }
@@ -100,7 +101,7 @@ fun ViewCardsScreen(navController: NavController, viewModel: FlashcardViewModel,
                     Spacer(modifier = Modifier.weight(1f))
 
                     Row {
-                        IconButton(onClick = { navController.navigate("edit_set/$setId/$title") }) {
+                        IconButton(onClick = { navController.navigate("edit_set/$setId/${Uri.encode(title)}") }) {
                             Icon(Icons.Default.Edit, contentDescription = "Edit set", tint = Color.White)
                         }
                     }
@@ -127,6 +128,10 @@ fun ViewCardsScreen(navController: NavController, viewModel: FlashcardViewModel,
                                 Box(modifier = Modifier.padding(horizontal = 4.dp).clip(CircleShape).background(color).size(6.dp))
                             }
                         }
+                    }
+                } else if (cardsState == null) {
+                    Box(modifier = Modifier.fillMaxWidth().height(260.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = primary)
                     }
                 } else {
                     Box(modifier = Modifier.fillMaxWidth().height(260.dp), contentAlignment = Alignment.Center) {
